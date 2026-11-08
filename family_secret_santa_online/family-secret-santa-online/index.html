@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Family Secret Santa</title>
+<style>
+:root{--g:#173d32;--g2:#285744;--r:#96383b;--gold:#d8b66b;--cream:#fbf7ed;--ink:#26372f}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(145deg,#315c49,#102d25);font:16px/1.5 Georgia,serif;color:var(--ink);min-height:100vh}
+header{text-align:center;color:#fff8e9;padding:38px 16px 26px}.k{color:#e8cc8c;letter-spacing:.2em;text-transform:uppercase;font:12px Arial}.k h1{font:500 clamp(38px,7vw,62px) Georgia;margin:12px 0}.k p{letter-spacing:normal;text-transform:none;color:#e4e8df;font:16px Georgia}
+main{max-width:850px;margin:auto;padding:0 15px 42px}.panel{background:var(--cream);border:1px solid #d7c69d;border-radius:18px;padding:24px;margin-bottom:17px;box-shadow:0 18px 45px #071d1770}
+h2{color:var(--g);font-size:25px;font-weight:500;margin:0 0 5px}.muted{color:#68756d;font:14px Arial;margin:0 0 16px}
+label{display:block;font:600 13px Arial;color:#40554a;margin:11px 0 5px}input,textarea{width:100%;padding:11px;border:1px solid #c9cbbb;border-radius:9px;font:15px Arial;background:white}textarea{min-height:85px}
+button{border:0;border-radius:9px;padding:11px 15px;background:var(--r);color:white;font:600 14px Arial;cursor:pointer}button.alt{background:var(--g2)}button.light{background:#e9e1cd;color:var(--g)}button:disabled{opacity:.5}
+.row{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.row>div{flex:1;min-width:180px}.people{display:grid;gap:9px}.person{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:end;background:#f1ecdf;padding:10px;border-radius:10px}.person label{margin:0 0 5px}.note{background:#f0eadb;border-left:3px solid var(--gold);padding:11px 13px;border-radius:5px;color:#68756d;font:13px/1.5 Arial;margin-top:14px}
+.hidden{display:none!important}.link{background:#f0eadb;border-radius:10px;padding:10px;margin:9px 0;display:flex;gap:8px;align-items:center}.link code{font:12px Arial;overflow-wrap:anywhere;flex:1}.pill{font:11px Arial;letter-spacing:.14em;text-transform:uppercase;color:var(--r)}.big{text-align:center;color:var(--r);font-size:34px;margin:12px 0}.center{text-align:center}.wish{white-space:pre-wrap;background:#f1ecdf;padding:14px;border-radius:10px;min-height:45px}
+footer{text-align:center;color:#d6dfd5;font:12px Arial;padding:0 15px 25px}@media(max-width:560px){.panel{padding:18px}.link{align-items:flex-start;flex-direction:column}}
+</style></head>
+<body>
+<header><div class="k">✦ A little holiday mystery ✦</div><h1>Family Secret Santa</h1><p>Good gifts, warm memories, and one very important secret.</p></header>
+<main>
+<section id="setup" class="panel">
+<h2>Set up your exchange</h2><p class="muted">Add 3–15 family members and create a random draw.</p>
+<div class="row"><div><label>Gift budget</label><input id="budget" placeholder="e.g. $25–$40"></div><div><label>Exchange date</label><input id="date" type="date"></div></div>
+<label>Family members</label><div id="people" class="people"></div>
+<div class="row" style="margin-top:12px"><button class="light" id="add">＋ Add a person</button><button id="draw">Draw Secret Santas</button></div>
+<div class="note">After the draw, copy each person's private link and send it only to them. Each link reveals one assignment, not the whole draw. Anyone with a person's link can open that person's reveal, so don't post links in a group chat.</div>
+<div id="out" class="hidden" style="margin-top:20px"><h2>Private reveal links</h2><p class="muted">Send each person only their own link.</p><div id="links"></div><button class="alt" id="copyall">Copy all links</button></div>
+</section>
+<section id="reveal" class="panel hidden">
+<div class="pill center">Your secret assignment</div><h2 class="center">You've got a Secret Santa!</h2><p class="center muted">Your person to surprise this year is…</p>
+<div class="big" id="recipient"></div><div class="note" id="eventdetails"></div>
+<h2 style="margin-top:22px">Their wishlist</h2><p class="muted">These are gift ideas your person chose to share.</p><div class="wish" id="theirwish">No wishlist added yet.</div>
+<hr style="border:0;border-top:1px solid #ddd2bc;margin:22px 0">
+<h2>Your wishlist</h2><p class="muted">Add gift ideas for the family member who drew your name. Your wishlist is shared only with your assigned Secret Santa.</p>
+<textarea id="mywish" placeholder="Gift ideas, hobbies, favorite snacks, books, or anything you'd enjoy…"></textarea>
+<button class="alt" id="savewish" style="margin-top:10px">Save my wishlist</button><p id="status" class="muted" aria-live="polite"></p>
+</section>
+</main><footer>Made for your family's holiday memories · Keep every reveal link secret 🎄</footer>
+<script>
+const $=id=>document.getElementById(id);let peopleCount=0,allLinks=[];
+function addPerson(v=''){if(peopleCount>=15)return;peopleCount++;let d=document.createElement('div');d.className='person';d.innerHTML='<div><label>Family member</label><input class="pname" maxlength="60" placeholder="Name"></div><button class="light remove" type="button">Remove</button>';d.querySelector('input').value=v;d.querySelector('.remove').onclick=()=>{d.remove();refresh()};$('people').append(d);refresh()}
+function refresh(){$('add').disabled=$('people').children.length>=15;$('draw').disabled=$('people').children.length<3}
+for(let i=0;i<10;i++)addPerson();
+$('add').onclick=()=>addPerson();
+async function api(action,data){let r=await fetch('/.netlify/functions/api',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...data})});let j=await r.json();if(!r.ok)throw Error(j.error||'Something went wrong');return j}
+$('draw').onclick=async()=>{let names=[...document.querySelectorAll('.pname')].map(x=>x.value.trim());if(names.length<3||names.some(x=>!x)){alert('Enter a name for everyone.');return}if(new Set(names.map(x=>x.toLowerCase())).size!==names.length){alert('Please use unique names.');return}
+$('draw').disabled=true;$('draw').textContent='Creating draw…';try{let data=await api('create',{names,budget:$('budget').value.trim(),date:$('date').value});allLinks=data.links;$('links').innerHTML='';data.links.forEach(x=>{let d=document.createElement('div');d.className='link';let c=document.createElement('code');c.textContent=x.name+' — '+x.url;let b=document.createElement('button');b.textContent='Copy link';b.onclick=()=>navigator.clipboard.writeText(x.url).then(()=>b.textContent='Copied!');d.append(c,b);$('links').append(d)});$('out').classList.remove('hidden');$('out').scrollIntoView({behavior:'smooth'});}catch(e){alert(e.message)}finally{$('draw').disabled=false;$('draw').textContent='Draw Secret Santas'}};
+$('copyall').onclick=()=>navigator.clipboard.writeText(allLinks.map(x=>x.name+': '+x.url).join('\n')).then(()=>$('copyall').textContent='Copied!');
+async function loadReveal(){let token=new URLSearchParams(location.search).get('reveal');if(!token)return;try{let d=await api('reveal',{token});$('setup').classList.add('hidden');$('reveal').classList.remove('hidden');$('recipient').textContent=d.recipient;$('eventdetails').textContent=[d.budget?'Gift budget: '+d.budget:'',d.date?'Exchange date: '+d.date:''].filter(Boolean).join(' · ')||'Have fun choosing something thoughtful!';$('theirwish').textContent=d.recipientWishlist||'No wishlist added yet.';$('mywish').value=d.myWishlist||'';$('savewish').onclick=async()=>{let b=$('savewish');b.disabled=true;b.textContent='Saving…';try{await api('save-wishlist',{token,wishlist:$('mywish').value});$('status').textContent='Wishlist saved. Your Secret Santa can now see it.'}catch(e){$('status').textContent=e.message}finally{b.disabled=false;b.textContent='Save my wishlist'}}}catch(e){$('setup').classList.add('hidden');$('reveal').classList.remove('hidden');$('reveal').innerHTML='<h2>Link unavailable</h2><p class="muted">This private link may be invalid. Ask the organizer to send you a fresh one.</p>'}}
+loadReveal();
+</script></body></html>
